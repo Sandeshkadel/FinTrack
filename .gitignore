@@ -1,0 +1,26 @@
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build artefacts (none today, but safe)
+node_modules/
+dist/
+build/
+
+# Local Python HTTP server artefacts
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Side-project Python app (not part of FinTrack Pro)
+fintrack-pro/
+
+# Design reference (not part of the shipped app)
+refrence.html
