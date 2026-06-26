@@ -39,7 +39,7 @@ export function SearchScreen({ onBack, onNavigate }: Props) {
       incomes
         .filter((i) =>
           (i.source || '').toLowerCase().includes(q) ||
-          i.category.toLowerCase().includes(q) ||
+          (i.category || '').toLowerCase().includes(q) ||
           (i.description || '').toLowerCase().includes(q),
         )
         .forEach((i) => list.push({ ...i, _type: 'income' }));
@@ -47,13 +47,13 @@ export function SearchScreen({ onBack, onNavigate }: Props) {
     if (filter !== 'income') {
       expenses
         .filter((e) =>
-          e.description.toLowerCase().includes(q) ||
-          e.category.toLowerCase().includes(q) ||
+          (e.description || '').toLowerCase().includes(q) ||
+          (e.category || '').toLowerCase().includes(q) ||
           (e.notes || '').toLowerCase().includes(q),
         )
         .forEach((e) => list.push({ ...e, _type: 'expense' }));
     }
-    return list.sort((a, b) => b.date.localeCompare(a.date));
+    return list.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   }, [query, filter, incomes, expenses]);
 
   const total = results.reduce((s, r) => s + r.amount, 0);
@@ -154,14 +154,18 @@ export function SearchScreen({ onBack, onNavigate }: Props) {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.title, { color: theme.text }]} numberOfLines={1}>
-                    {r.title}
+                    {r.title || (r._type === 'income' ? (r.source || 'Income') : (r.description || 'Expense'))}
                   </Text>
                   <View style={styles.meta}>
-                    <Badge
-                      label={r.category}
-                      color={r._type === 'income' ? COLORS.success : COLORS.danger}
-                    />
-                    <Text style={[styles.date, { color: theme.textMuted }]}>{formatDate(r.date)}</Text>
+                    {r.category ? (
+                      <Badge
+                        label={r.category}
+                        color={r._type === 'income' ? COLORS.success : COLORS.danger}
+                      />
+                    ) : null}
+                    {r.date ? (
+                      <Text style={[styles.date, { color: theme.textMuted }]}>{formatDate(r.date)}</Text>
+                    ) : null}
                   </View>
                   {r.notes ? (
                     <Text style={[styles.notes, { color: theme.textMuted }]} numberOfLines={2}>
@@ -176,7 +180,7 @@ export function SearchScreen({ onBack, onNavigate }: Props) {
                   ]}
                 >
                   {r._type === 'income' ? '+' : '-'}
-                  {formatCurrency(r.amount, currency, sym)}
+                  {formatCurrency(r.amount || 0, currency, sym)}
                 </Text>
               </Card>
             ))}

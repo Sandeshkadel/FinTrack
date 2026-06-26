@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react';
-import { StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
+import { Pressable, StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
 import { COLORS, RADIUS, SHADOWS } from '@/constants/colors';
 import { useAppTheme } from '@/context/ThemeContext';
 
@@ -35,8 +35,6 @@ export function Card({ children, style, glow, onPress, padded = true }: CardProp
   );
 
   if (onPress) {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { Pressable } = require('react-native');
     return (
       <Pressable
         onPress={onPress}

@@ -16,23 +16,31 @@ import { AuthScreen } from '@/screens/AuthScreen';
 
 import { RootNavigator } from '@/navigation/RootNavigator';
 import { ToastContainer } from '@/components/ToastContainer';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { COLORS } from '@/constants/colors';
 
-// Prevent native splash from auto-hiding so we control the transition
-SplashScreen.preventAutoHideAsync().catch(() => {});
-SystemUI.setBackgroundColorAsync(COLORS.primary);
+// Prevent native splash from auto-hiding so we control the transition.
+// Wrap in try/catch so a failure here never blocks the rest of the app.
+try {
+  SplashScreen.preventAutoHideAsync().catch(() => {});
+} catch {}
+try {
+  SystemUI.setBackgroundColorAsync(COLORS.primary).catch(() => {});
+} catch {}
 
 export default function App() {
   return (
-    <GestureHandlerRootView style={styles.root}>
-      <SafeAreaProvider>
-        <AppProvider>
-          <ThemeProvider>
-            <AppGate />
-          </ThemeProvider>
-        </AppProvider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <ErrorBoundary>
+      <GestureHandlerRootView style={styles.root}>
+        <SafeAreaProvider>
+          <AppProvider>
+            <ThemeProvider>
+              <AppGate />
+            </ThemeProvider>
+          </AppProvider>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </ErrorBoundary>
   );
 }
 

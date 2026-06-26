@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Pressable,
@@ -47,6 +47,18 @@ export function SettingsScreen({ onBack, onNavigate, onSignOut }: Props) {
   const [confirmWipe, setConfirmWipe] = useState(false);
   const [confirmSignOut, setConfirmSignOut] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [biometricsHwAvailable, setBiometricsHwAvailable] = useState(false);
+
+  // Resolve biometric availability async so we don't call a Promise as `disabled` prop
+  useEffect(() => {
+    let mounted = true;
+    authService.isBiometricsAvailable().then((v) => {
+      if (mounted) setBiometricsHwAvailable(!!v?.available && !!v?.enrolled);
+    }).catch(() => {
+      if (mounted) setBiometricsHwAvailable(false);
+    });
+    return () => { mounted = false; };
+  }, []);
 
   const setTheme = async (mode: TM) => {
     await updateProfile({ theme: mode });
@@ -193,7 +205,7 @@ export function SettingsScreen({ onBack, onNavigate, onSignOut }: Props) {
               description="Use Face ID, Touch ID, or device PIN to unlock"
               value={!!user?.biometricsEnabled}
               onValueChange={setBiometrics}
-              disabled={!authService.isBiometricsAvailable()}
+              disabled={!biometricsHwAvailable}
             />
           </Card>
         </Section>
