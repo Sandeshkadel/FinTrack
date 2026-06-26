@@ -6,7 +6,7 @@
 
 Take control of your money with stunning charts, smart insights, OCR receipt scanning, savings goals, and budgets — all stored securely on your device.
 
-[Features](#-features) · [Download](#-download) · [Screenshots](#-screenshots) · [Tech Stack](#-tech-stack) · [Build](#-building-from-source) · [License](#-license)
+[Features](#-features) · [Download](#-download) · [iOS Install Guide](#-ios-install-guide-altstore--sideloadly) · [Android Install Guide](#-android-install-guide) · [Screenshots](#-screenshots) · [Tech Stack](#-tech-stack) · [Build](#-building-from-source) · [License](#-license)
 
 </div>
 
@@ -20,11 +20,205 @@ Take control of your money with stunning charts, smart insights, OCR receipt sca
 | 🤖 **Android (AAB)** | 2.0.0 | ~50 MB | [Download Android AAB](https://github.com/Sandeshkadel/FinTrack/releases/latest/download/fintrack-pro.aab) |
 | 🍎 **iOS (IPA)** | 2.0.0 | ~70 MB | [**Download iOS IPA**](https://github.com/Sandeshkadel/FinTrack/releases/latest/download/fintrack-pro.ipa) |
 
-> **Note:** The iOS IPA is unsigned for direct distribution. For App Store installation, see the [Building from Source](#-building-from-source) section. The Android APK works on Android 7.0+ (API 24).
+> **Platform requirements:** Android 7.0+ (API 24) · iOS 15.1+
+>
+> **iOS note:** The IPA is sideloaded (not App Store distributed). See the [iOS Install Guide](#-ios-install-guide-altstore--sideloadly) below — works with a free Apple ID, but apps must be refreshed every 7 days.
 
-### Installation
-- **Android:** Download the APK → enable "Install from unknown sources" → tap to install.
-- **iOS:** Download the IPA → use AltStore, Sideloadly, or sign with your Apple Developer account.
+---
+
+## 🍎 iOS Install Guide (AltStore & Sideloadly)
+
+> **Heads-up:** Apple does not allow permanent free installation of iOS apps outside the App Store. The methods below use your free Apple ID to sign the IPA locally — they work, but with limitations.
+
+### Limitations of free Apple ID sideloading
+
+| Limit | Detail |
+|-------|--------|
+| **7-day expiry** | The app stops launching after 7 days unless refreshed |
+| **3-app limit** | Max 3 sideloaded apps per device (apps in active use, not total installed) |
+| **Computer required** | AltServer must run in background to auto-refresh |
+| **No push notifications** | Apple blocks `aps-environment` for free provisioning (local notifications still work) |
+| **No iCloud sync** | Keychain sharing & iCloud features are disabled |
+| **Reinstall on new device** | Must re-sign with your Apple ID |
+
+For a permanent install without limits, you need a **paid Apple Developer Account ($99/year)** and submit to the App Store.
+
+---
+
+### Method 1: AltStore (recommended — auto-refresh)
+
+**Best for:** users who want the app to refresh itself in the background and forget about re-signing.
+
+#### Requirements
+- iPhone / iPad running iOS 15.1 or later
+- A computer (Windows, macOS, or Linux) on the same Wi-Fi network as your iPhone
+- A free Apple ID (no paid developer account needed)
+- USB cable (or stay on the same Wi-Fi)
+
+#### Step 1 — Install AltServer on your computer
+
+| Platform | Download |
+|----------|----------|
+| **Windows** | [altstore.io](https://altstore.io) → download `.exe` installer |
+| **macOS** | [altstore.io](https://altstore.io) → download from Mac App Store (recommended) or direct `.dmg` |
+| **Linux** | Not officially supported — use Method 2 (Sideloadly) instead |
+
+Run the installer. On Windows, AltServer lives in your system tray. On macOS, it lives in the menu bar.
+
+#### Step 2 — Install AltStore on your iPhone
+
+1. **Open AltServer** on your computer.
+2. **Connect iPhone to computer via USB** (and tap "Trust" on the phone when prompted).
+3. **Pair AltServer with your Apple ID:**
+   - Windows: click the AltServer tray icon → **"Install AltStore"** → select your iPhone.
+   - macOS: click the AltServer menu bar icon → **"Install AltStore"** → select your iPhone.
+   - When prompted, sign in with your **Apple ID email + app-specific password** (see Step 3 below for app-specific password).
+4. AltStore will install on your iPhone. Trust the developer profile (see Step 4 below).
+
+#### Step 3 — Generate an app-specific password (Apple ID)
+
+AltStore needs an app-specific password to sign IPAs with your Apple ID.
+
+1. Go to [appleid.apple.com](https://appleid.apple.com) → sign in.
+2. **App-Specific Passwords** section → click **"Generate Password"**.
+3. Label it `AltStore` → copy the generated 16-character password (format: `abcd-efgh-ijkl-mnop`).
+4. Paste this into AltStore when it asks for your Apple ID password.
+
+> **Tip:** You can revoke this password later from the same page if needed.
+
+#### Step 4 — Trust the developer profile (first launch)
+
+When you first open AltStore on iPhone:
+
+1. Open iPhone **Settings** app.
+2. Go to **General → VPN & Device Management**.
+3. Tap your **Apple ID** under "Developer App".
+4. Tap **"Trust [your email]"** → confirm.
+
+#### Step 5 — Download FinTrack Pro IPA
+
+Download from the [Download](#-download) table above, or directly:
+```
+https://github.com/Sandeshkadel/FinTrack/releases/latest/download/fintrack-pro.ipa
+```
+
+#### Step 6 — Install FinTrack Pro via AltStore
+
+1. **Open AltStore** on your iPhone.
+2. Tap the **"+"** button in the **My Apps** tab.
+3. Browse to the downloaded `fintrack-pro.ipa` file (Files app → Downloads).
+4. Tap it → AltStore installs and signs it with your Apple ID.
+5. Wait for the install to complete (1–2 minutes).
+
+#### Step 7 — Launch & trust
+
+1. Open **Settings → General → VPN & Device Management** again.
+2. Trust the new **"FinTrack Pro"** developer profile.
+3. Launch FinTrack Pro from your home screen.
+
+#### Step 8 — Enable auto-refresh (optional but recommended)
+
+1. Open **AltStore** on iPhone.
+2. Go to **Settings** tab.
+3. Enable **"Background Refresh"**.
+4. Keep AltServer running on your computer (or use AltServer for wireless refresh).
+5. The app will now refresh itself every 7 days before it expires.
+
+---
+
+### Method 2: Sideloadly (Windows / macOS / Linux — no background app needed)
+
+**Best for:** Linux users, or anyone who wants a one-click install without installing AltServer.
+
+#### Requirements
+- iPhone / iPad running iOS 15.1 or later
+- Windows, macOS, or Linux computer
+- Free Apple ID
+- USB cable
+
+#### Step 1 — Install Sideloadly
+
+Download from [sideloadly.io](https://sideloadly.io) — choose your platform.
+
+#### Step 2 — Download FinTrack Pro IPA
+
+Download from the [Download](#-download) table above.
+
+#### Step 3 — Install
+
+1. Open **Sideloadly**.
+2. Connect iPhone via USB.
+3. Drag `fintrack-pro.ipa` into the IPA field.
+4. Enter your **Apple ID email**.
+5. Click **"Start"** → enter your **app-specific password** (same one you generated for AltStore, or generate a new one).
+6. Wait 1–2 minutes for installation.
+
+#### Step 4 — Trust the developer profile
+
+1. iPhone **Settings → General → VPN & Device Management**.
+2. Trust the **"FinTrack Pro"** developer profile.
+
+#### Step 5 — Refresh every 7 days
+
+Sideloadly does NOT auto-refresh. To keep using the app past 7 days:
+
+1. Reconnect iPhone.
+2. Open Sideloadly → drag `fintrack-pro.ipa` back in.
+3. Click **"Start"** again — it will re-sign over the existing install.
+
+You can do this from anywhere with your computer — settings and data are preserved.
+
+---
+
+### Troubleshooting
+
+#### "Unable to install" or "Verification failed"
+- Make sure you **trusted the developer profile** in Settings → VPN & Device Management.
+- Reboot your iPhone and try again.
+- Check that the IPA downloaded fully (file size should be ~70 MB).
+
+#### "Apple ID not supported" or "Verification failed: A valid provisioning profile could not be found"
+- You may need to **enable Two-Factor Authentication** on your Apple ID (required for sideloading).
+- Regenerate your app-specific password and try again.
+
+#### App icon is grey / app won't open
+- The 7-day signing window expired. Re-install with Sideloadly or wait for AltStore's background refresh.
+
+#### Push notifications don't work
+- This is normal for sideloaded apps. **Local notifications** (budget alerts, savings reminders) work — only remote/APNS push is blocked.
+
+#### "Maximum number of apps for free development profiles reached"
+- Free Apple ID allows **3 active sideloaded apps**. Delete one before installing another.
+
+---
+
+## 🤖 Android Install Guide
+
+#### From APK (sideloaded)
+
+1. Download `fintrack-pro.apk` from the [Download](#-download) table.
+2. On your Android device, open **Settings → Security → Install unknown apps**.
+3. Allow your browser / Files app to install APKs.
+4. Open the downloaded APK → tap **Install**.
+5. Launch FinTrack Pro from your home screen.
+
+Works on Android 7.0+ (API 24). No expiration, no refresh needed.
+
+#### From Play Store (after store approval)
+
+The AAB (Android App Bundle) is the upload format Google Play requires. Once you have a Google Play Developer account ($25 one-time), upload `fintrack-pro.aab` to the Play Console.
+
+---
+
+### Quick comparison
+
+| Method | Cost | Permanent? | Auto-refresh? | Computer needed? |
+|--------|------|-----------|---------------|------------------|
+| **Android APK sideload** | Free | ✅ Yes | N/A | Only for initial install |
+| **AltStore + free Apple ID** | Free | ❌ 7-day refresh | ✅ Yes (background) | Yes (AltServer runs on it) |
+| **Sideloadly + free Apple ID** | Free | ❌ 7-day refresh | ❌ Manual | Yes (every 7 days) |
+| **TestFlight + paid dev** | $99/year | ✅ 1 year | ✅ Yes | No |
+| **App Store + paid dev** | $99/year | ✅ Forever | ✅ Yes | No |
 
 ---
 
