@@ -3,7 +3,48 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>FinTrack Pro ✦ Ultimate</title>
+    <title>FinTrack Pro ✦ Ultimate — Premium personal finance, in your browser</title>
+    <meta name="description" content="FinTrack Pro Ultimate is a premium, local-first personal-finance app. Track income, expenses, goals, budgets, calendar with receipts, and on-device OCR. Zero accounts. Zero servers. Yours forever." />
+    <meta name="keywords" content="personal finance, budget tracker, expense tracker, income tracker, savings goals, calendar, OCR receipt scanner, local-first, offline, single-file, no signup, privacy" />
+    <meta name="author" content="Sandesh Kadel" />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#8b5cf6" />
+    <link rel="canonical" href="https://YOUR-DOMAIN-HERE/" />
+
+    <!-- Favicon + Apple touch icon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="fev.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="fev.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="logo.png" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="FinTrack Pro Ultimate" />
+    <meta property="og:title" content="FinTrack Pro ✦ Ultimate — Premium personal finance, in your browser" />
+    <meta property="og:description" content="Premium local-first personal finance. Income, expenses, goals, budgets, OCR receipts, calendar. Zero accounts. Zero servers. Yours forever." />
+    <meta property="og:image" content="logo.png" />
+    <meta property="og:url" content="https://YOUR-DOMAIN-HERE/" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="FinTrack Pro ✦ Ultimate" />
+    <meta name="twitter:description" content="Premium local-first personal finance. Income, expenses, goals, budgets, OCR receipts, calendar. Zero accounts. Zero servers. Yours forever." />
+    <meta name="twitter:image" content="logo.png" />
+
+    <!-- Structured data: WebApplication -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "FinTrack Pro Ultimate",
+      "description": "Premium personal finance app — income, expenses, goals, budgets, OCR receipts. Offline, local-first, zero accounts.",
+      "applicationCategory": "FinanceApplication",
+      "operatingSystem": "Any (browser)",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "image": "logo.png",
+      "author": { "@type": "Person", "name": "Sandesh Kadel" }
+    }
+    </script>
+
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
     </script>
@@ -4282,9 +4323,174 @@
         @media (max-width: 768px) {
             .hamburger { display: flex; }
         }
+
+        /* ============================================================
+           SPLASH SCREEN — logo zoom-in/zoom-out, fade out after ~4s.
+           Plays on every page load before routing to onboarding or app.
+           ============================================================ */
+        #splash {
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            opacity: 1;
+            pointer-events: auto;
+            transition: opacity 0.55s ease 3.45s;
+        }
+        #splash.hidden { opacity: 0; pointer-events: none; }
+        #splash.gone   { display: none; }
+        #splash.splash-out {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.55s ease;
+        }
+        .splash-bg {
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(1100px 700px at 30% 20%, rgba(139, 92, 246, 0.55), transparent 60%),
+                radial-gradient(900px 700px at 75% 80%, rgba(236, 72, 153, 0.45), transparent 60%),
+                linear-gradient(135deg, #1a1133 0%, #0f0a1f 60%, #2a1140 100%);
+        }
+        .splash-bg::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image:
+                radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+            background-size: 28px 28px;
+            opacity: 0.5;
+            z-index: 1;
+            pointer-events: none;
+        }
+        #splash::after {
+            content: "";
+            position: absolute;
+            width: 380px;
+            height: 380px;
+            border-radius: 50%;
+            background: radial-gradient(closest-side, rgba(139, 92, 246, 0.55), transparent 70%);
+            filter: blur(20px);
+            z-index: 1;
+            animation: splashGlow 4s ease-in-out infinite;
+            pointer-events: none;
+        }
+        @keyframes splashGlow {
+            0%, 100% { transform: scale(0.85); opacity: 0.55; }
+            50%      { transform: scale(1.15); opacity: 0.85; }
+        }
+        .splash-stage {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 22px;
+            animation: splashZoom 3.4s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+        }
+        @keyframes splashZoom {
+            0%   { transform: scale(0.4); opacity: 0; filter: blur(20px); }
+            25%  { transform: scale(1.1); opacity: 1; filter: blur(0); }
+            55%  { transform: scale(1);   opacity: 1; filter: blur(0); }
+            100% { transform: scale(1.6); opacity: 0; filter: blur(8px); }
+        }
+        .splash-logo-wrap {
+            width: 168px;
+            height: 168px;
+            border-radius: 36px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06));
+            border: 1.5px solid rgba(255, 255, 255, 0.18);
+            box-shadow:
+                0 30px 60px rgba(139, 92, 246, 0.45),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .splash-logo-img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
+        .splash-logo-fallback {
+            width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .splash-logo-fallback svg { width: 78%; height: 78%; }
+        .splash-wordmark {
+            display: flex; flex-direction: column; align-items: center; gap: 4px;
+        }
+        .splash-name {
+            font-size: 38px; font-weight: 800; letter-spacing: -0.02em;
+            color: #fff; text-shadow: 0 4px 24px rgba(0, 0, 0, 0.45);
+        }
+        .splash-tag {
+            font-size: 13px; font-weight: 600; letter-spacing: 0.22em;
+            text-transform: uppercase; color: rgba(255, 255, 255, 0.75);
+        }
+
+        /* ============================================================
+           PASSWORD EYE — single, attractive, animated.
+           Only ONE eye icon shows on the auth form (the password field's).
+           ============================================================ */
+        .toggle-icon {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: var(--gray-400, #9ca3af);
+            font-size: 15px;
+            padding: 6px;
+            border-radius: 8px;
+            transition: color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+            z-index: 4;
+        }
+        .toggle-icon:hover {
+            color: var(--primary, #8b5cf6);
+            background: rgba(139, 92, 246, 0.10);
+            transform: translateY(-50%) scale(1.08);
+        }
+        .toggle-icon:active { transform: translateY(-50%) scale(0.94); }
+        .toggle-icon.shown  { color: var(--primary, #8b5cf6); }
     </style>
 </head>
 <body>
+
+    <!-- ============================================================
+    SPLASH SCREEN — logo zoom-in/zoom-out, fade out after ~4 seconds.
+    Plays on EVERY page load before any other view is shown.
+    Source: ./logo.png (drop your logo here). If the file is missing
+    the splash still renders an SVG fallback so it never breaks.
+    ============================================================ -->
+    <div id="splash" aria-hidden="true">
+        <div class="splash-bg"></div>
+        <div class="splash-stage">
+            <div class="splash-logo-wrap">
+                <img src="logo.png" alt="FinTrack Pro" class="splash-logo-img"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                <div class="splash-logo-fallback" style="display:none;">
+                    <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <defs>
+                            <linearGradient id="splash-grad" x1="0" y1="0" x2="1" y2="1">
+                                <stop offset="0%" stop-color="#8b5cf6" />
+                                <stop offset="100%" stop-color="#ec4899" />
+                            </linearGradient>
+                        </defs>
+                        <rect x="6" y="6" width="52" height="52" rx="14" fill="url(#splash-grad)"/>
+                        <path d="M16 44 L24 32 L32 38 L44 20" stroke="#fff" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="44" cy="20" r="3" fill="#fff"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="splash-wordmark">
+                <span class="splash-name">FinTrack</span>
+                <span class="splash-tag">Pro Ultimate</span>
+            </div>
+        </div>
+    </div>
 
     <!-- ============================================================
     ONBOARDING
@@ -4355,7 +4561,6 @@
                 <div class="floating-field" id="auth-confirm-field" style="display:none;">
                     <input type="password" id="auth-confirm" class="pw-toggle-input" placeholder=" " />
                     <label for="auth-confirm">Confirm Password</label>
-                    <i class="fas fa-eye toggle-icon" id="auth-confirm-toggle" title="Toggle confirm password visibility"></i>
                     <div class="error-msg">Passwords do not match.</div>
                 </div>
                 <div id="pw-strength-wrap" style="display:none;">
@@ -5221,8 +5426,9 @@
 
         $('#onboarding-next').addEventListener('click', () => {
             if (onboardingIdx === onboardingSlides.length - 1) {
-                // Mark onboarding complete so returning users skip it
-                localStorage.setItem('fintrack_onboarded', '1');
+                // Final step ("Get Started") — show login. The intro replays
+                // every time the user reaches the login screen, so we don't
+                // mark anything as "seen".
                 onboarding.style.display = 'none';
                 auth.style.display = 'flex';
                 renderAuth();
@@ -5240,19 +5446,15 @@
         });
 
         $('#onboarding-skip').addEventListener('click', () => {
-            // Skipping also counts as "seen" — don't show it again
-            localStorage.setItem('fintrack_onboarded', '1');
+            // Skip → straight to login. The intro replays every time the
+            // user reaches the login screen.
             onboarding.style.display = 'none';
             auth.style.display = 'flex';
             renderAuth();
         });
 
-        // Only paint the onboarding intro on first install. Returning users go straight to login.
-        if (!localStorage.getItem('fintrack_onboarded')) {
-            renderOnboarding();
-        } else {
-            onboarding.style.display = 'none';
-        }
+        // The intro is rendered by the splash router below — don't auto-show
+        // it here. The router decides what comes after the splash animation.
 
         // ============================================================
         // AUTH – with real user storage
@@ -5343,19 +5545,9 @@
         });
 
         // Confirm password visibility toggle
-        const confirmToggle = document.getElementById('auth-confirm-toggle');
-        if (confirmToggle) {
-            confirmToggle.addEventListener('click', function() {
-                const cf = $('#auth-confirm');
-                if (cf.type === 'password') {
-                    cf.type = 'text';
-                    this.className = 'fas fa-eye-slash toggle-icon';
-                } else {
-                    cf.type = 'password';
-                    this.className = 'fas fa-eye toggle-icon';
-                }
-            });
-        }
+        // Confirm password visibility toggle removed — only ONE eye icon is
+        // shown on the auth form (the password field's). The confirm field
+        // stays masked, which is the conventional / safer default.
 
         // Password strength meter
         function checkPasswordStrength(pw) {
@@ -5522,37 +5714,95 @@
 
         loadUsers();
 
-        // Check saved session (with 30-day expiry enforcement)
-        (function checkSession() {
-            // Expire any session older than 30 days
-            const expiry = parseInt(localStorage.getItem('fintrack_session_expiry') || '0', 10);
-            if (expiry && Date.now() > expiry) {
-                localStorage.removeItem('fintrack_user');
-                localStorage.removeItem('fintrack_token');
-                localStorage.removeItem('fintrack_session_expiry');
-            }
+        // ============================================================
+        // SPLASH → SESSION ROUTER
+        // Every page load (and every logout) starts with the logo splash
+        // for ~4 seconds. After the splash fades, we decide what to show:
+        //   - valid session  -> go straight to the app (no onboarding)
+        //   - no/expired     -> play the 6-step intro, then login/signup
+        // ============================================================
+        (function splashRouter() {
+            const splash   = document.getElementById('splash');
+            const appEl    = document.getElementById('app');
+            const authEl   = document.getElementById('auth');
+            const onbEl    = document.getElementById('onboarding');
+            const SPLASH_MS = 4000; // logo animation length
 
-            const saved = localStorage.getItem('fintrack_user');
-            if (saved) {
-                try {
-                    const user = JSON.parse(saved);
-                    // Verify user still exists in users list
-                    const found = state.users.find(u => u.id === user.id);
-                    if (found) {
-                        state.user = found;
-                        state.token = localStorage.getItem('fintrack_token') || 'fake-token';
-                        // Refresh expiry so an active user gets another 30 days
-                        localStorage.setItem('fintrack_session_expiry', String(Date.now() + 30 * 24 * 60 * 60 * 1000));
-                        enterApp();
-                        return;
-                    }
-                } catch (_) {}
-            }
-            // If not logged in (or session expired), show auth
-            onboarding.style.display = 'none';
-            auth.style.display = 'flex';
-            renderAuth();
+            const finishSplash = () => {
+                if (splash) splash.classList.add('splash-out');
+                setTimeout(() => {
+                    if (splash) splash.style.display = 'none';
+                    routeAfterSplash();
+                }, 600);
+            };
+
+            const routeAfterSplash = () => {
+                // Expire any session older than 30 days
+                const expiry = parseInt(localStorage.getItem('fintrack_session_expiry') || '0', 10);
+                if (expiry && Date.now() > expiry) {
+                    localStorage.removeItem('fintrack_user');
+                    localStorage.removeItem('fintrack_token');
+                    localStorage.removeItem('fintrack_session_expiry');
+                }
+
+                const saved = localStorage.getItem('fintrack_user');
+                if (saved) {
+                    try {
+                        const user = JSON.parse(saved);
+                        const found = state.users.find(u => u.id === user.id);
+                        if (found) {
+                            state.user = found;
+                            state.token = localStorage.getItem('fintrack_token') || 'fake-token';
+                            // Refresh expiry so an active user gets another 30 days
+                            localStorage.setItem('fintrack_session_expiry', String(Date.now() + 30 * 24 * 60 * 60 * 1000));
+                            // Valid session: skip the intro, go straight to app
+                            enterApp();
+                            return;
+                        }
+                    } catch (_) { /* corrupt blob — fall through to intro */ }
+                }
+
+                // No session: play the 6-step intro every time, then login.
+                if (onbEl)  onbEl.style.display = 'flex';
+                if (authEl) authEl.style.display = 'none';
+                if (appEl)  appEl.style.display = 'none';
+                renderOnboarding();
+            };
+
+            // Keep only the splash visible while it animates
+            if (appEl)  appEl.style.display = 'none';
+            if (authEl) authEl.style.display = 'none';
+            if (onbEl)  onbEl.style.display = 'none';
+
+            setTimeout(finishSplash, SPLASH_MS);
         })();
+
+        // Re-trigger the splash on logout so the experience is consistent
+        // every time the user is sent back to the login screen.
+        function replaySplashThenIntro() {
+            const splash = document.getElementById('splash');
+            const onbEl  = document.getElementById('onboarding');
+            const authEl = document.getElementById('auth');
+            const appEl  = document.getElementById('app');
+            if (appEl)  appEl.style.display  = 'none';
+            if (authEl) authEl.style.display = 'none';
+            if (onbEl)  onbEl.style.display  = 'none';
+            if (splash) {
+                splash.style.display = 'flex';
+                splash.classList.remove('splash-out');
+                setTimeout(() => {
+                    splash.classList.add('splash-out');
+                    setTimeout(() => {
+                        splash.style.display = 'none';
+                        if (onbEl) onbEl.style.display = 'flex';
+                        renderOnboarding();
+                    }, 600);
+                }, 4000);
+            } else {
+                if (onbEl) onbEl.style.display = 'flex';
+                renderOnboarding();
+            }
+        }
 
         function enterApp() {
             // Make sure the onboarding overlay never sits on top of a logged-in user
