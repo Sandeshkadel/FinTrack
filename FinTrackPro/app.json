@@ -49,13 +49,7 @@
         "SCHEDULE_EXACT_ALARM"
       ]
     },
-    "web": {
-      "bundler": "metro",
-      "output": "static",
-      "favicon": "./src/assets/favicon.png"
-    },
     "plugins": [
-      "expo-router",
       [
         "expo-image-picker",
         {
@@ -96,13 +90,9 @@
       "expo-splash-screen"
     ],
     "experiments": {
-      "typedRoutes": true,
       "tsconfigPaths": true
     },
     "extra": {
-      "router": {
-        "origin": false
-      },
       "eas": {
         "projectId": "your-project-id-here"
       }
