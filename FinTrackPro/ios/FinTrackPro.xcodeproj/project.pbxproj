@@ -1,0 +1,17 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 54;
+	objects = {
+		ISD8FFE99B0A6F4A6A8B7C0B7D5D2F7A6F /* FinTrack Pro */ = {
+			isa = PBXFileReference;
+			explicitFileType = wrapper.application;
+			includeInIndex = 0;
+			path = "FinTrackPro";
+			sourceTree = "<group>";
+		};
+	};
+	rootObject = ISD8FFE99B0A6F4A6A8B7C0B7D5D2F7A6F /* FinTrack Pro */;
+}

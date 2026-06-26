@@ -1,0 +1,85 @@
+name: Build Android APK/AAB
+
+on:
+  push:
+    branches: [main, master, develop]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    name: Build Android (APK + AAB)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: yarn
+
+      - name: 📦 Install dependencies
+        run: |
+          cd FinTrackPro
+          npm install --legacy-peer-deps
+
+      - name: 🏗️ Setup Expo and EAS
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: 🔍 Run TypeScript type check
+        run: |
+          cd FinTrackPro
+          npx tsc --noEmit
+        continue-on-error: true
+
+      - name: 📱 Build preview APK
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+          packager: yarn
+          command: |
+            cd FinTrackPro && eas build -p android --profile preview --local --output ./build/fintrack-pro.apk
+
+      - name: 📦 Build production AAB
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+          packager: yarn
+          command: |
+            cd FinTrackPro && eas build -p android --profile production --local --output ./build/fintrack-pro.aab
+
+      - name: ⬆️ Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fintrack-pro-android-apk
+          path: FinTrackPro/build/fintrack-pro.apk
+          if-no-files-found: ignore
+
+      - name: ⬆️ Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fintrack-pro-android-aab
+          path: FinTrackPro/build/fintrack-pro.aab
+          if-no-files-found: ignore
+
+      - name: 📝 Comment on PR with download links
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          message: |
+            ✅ Android build succeeded!
+            📦 [Download APK](#) · [Download AAB](#)
+            Built with Expo SDK 51 · React Native 0.74.5

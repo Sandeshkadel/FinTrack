@@ -1,0 +1,6 @@
+{
+  "build": {
+    "base": "tsconfig"
+  },
+  "extends": "@react-native/typescript-config/tsconfig.json"
+}
