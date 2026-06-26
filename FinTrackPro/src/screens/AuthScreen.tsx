@@ -209,7 +209,7 @@ export function AuthScreen({ onAuthenticated }: Props) {
             style={{ marginTop: 8 }}
           />
 
-          {biometricsAvailable ? (
+          {biometricsAvailable?.available && biometricsAvailable?.enrolled ? (
             <Button
               title="Use Face ID / Touch ID"
               onPress={tryBiometrics}
