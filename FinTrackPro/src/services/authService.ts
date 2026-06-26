@@ -39,6 +39,7 @@ export const authService = {
       currency: '$' as CurrencySymbol,
       symbol: '$',
       theme: 'system',
+      biometricsEnabled: false,
     };
     await storage.setUsers([...users, user]);
     await this.startSession(user);
@@ -123,20 +124,23 @@ export const authService = {
     await storage.wipe();
   },
 
-  async authenticateWithBiometrics(): Promise<boolean> {
+  async authenticateWithBiometrics(
+    opts: { promptMessage?: string; cancelLabel?: string } = {},
+  ): Promise<{ success: boolean; error?: string }> {
     try {
       const hasHardware = await LocalAuthentication.hasHardwareAsync();
-      if (!hasHardware) return false;
+      if (!hasHardware) return { success: false, error: 'no_hardware' };
       const enrolled = await LocalAuthentication.isEnrolledAsync();
-      if (!enrolled) return false;
+      if (!enrolled) return { success: false, error: 'not_enrolled' };
       const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: 'Unlock FinTrack Pro',
+        promptMessage: opts.promptMessage || 'Unlock FinTrack Pro',
+        cancelLabel: opts.cancelLabel || 'Cancel',
         fallbackLabel: 'Use passcode',
         disableDeviceFallback: false,
       });
-      return result.success;
-    } catch {
-      return false;
+      return { success: !!result.success, error: result.success ? undefined : (result as any)?.error || 'failed' };
+    } catch (err) {
+      return { success: false, error: (err as Error)?.message || 'failed' };
     }
   },
 
@@ -153,5 +157,42 @@ export const authService = {
     } catch {
       return { available: false, enrolled: false };
     }
+  },
+
+  /**
+   * Returns whether the *current user* has biometric lock enabled.
+   * Reads from the User object (single source of truth).
+   * Falls back to the legacy AsyncStorage key for users created before
+   * biometricsEnabled was added to the User shape.
+   */
+  async getBiometricsEnabled(): Promise<boolean> {
+    const u = await storage.getUser();
+    if (u && typeof (u as User).biometricsEnabled === 'boolean') {
+      return (u as User).biometricsEnabled as boolean;
+    }
+    return storage.getBiometricsEnabled();
+  },
+
+  /**
+   * Persist the biometric-lock preference on the User record.
+   * Updates both the users index and the current-user pointer.
+   * No-op if no user is signed in.
+   */
+  async setBiometricsEnabled(enabled: boolean): Promise<User | null> {
+    const current = await storage.getUser();
+    if (!current) return null;
+    const users = await storage.getUsers();
+    const idx = users.findIndex((u) => u.id === current.id);
+    if (idx < 0) return null;
+    const updated: User = { ...users[idx], biometricsEnabled: enabled };
+    users[idx] = updated;
+    await storage.setUsers(users);
+    if ((await storage.getUser())?.id === current.id) {
+      await storage.setUser(updated);
+    }
+    // Keep the legacy AsyncStorage key in sync as a cache so old code paths
+    // that still read it see the same answer.
+    await storage.setBiometricsEnabled(enabled);
+    return updated;
   },
 };

@@ -24,6 +24,7 @@ import {
 } from '@/types';
 import { storage } from '@/storage/storage';
 import { imageDB } from '@/database/db';
+import { authService } from '@/services/authService';
 import { toLocalDateString, uid, calculateHealth, HealthReport } from '@/utils/finance';
 
 /* ============================================================
@@ -480,7 +481,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'SET_THEME', payload: patch.theme });
     }
     if (patch.biometricsEnabled !== undefined) {
-      await storage.setBiometricsEnabled(patch.biometricsEnabled);
+      // Route through authService so the users-index entry, current-user
+      // pointer, and the legacy AsyncStorage key all stay in sync.
+      const updated = await authService.setBiometricsEnabled(patch.biometricsEnabled);
+      if (updated) {
+        dispatch({ type: 'SET_USER', payload: updated });
+      }
       dispatch({ type: 'SET_BIOMETRICS', payload: patch.biometricsEnabled });
     }
   }, [state.user]);

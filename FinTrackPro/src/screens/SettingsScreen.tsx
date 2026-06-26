@@ -69,7 +69,47 @@ export function SettingsScreen({ onBack, onNavigate, onSignOut }: Props) {
   };
 
   const setBiometrics = async (enabled: boolean) => {
+    if (enabled) {
+      // Toggling on — first prove the user can actually use the device's biometric.
+      // Otherwise we'd flip the preference on, but the next launch would silently
+      // fail to authenticate and the user would be locked out.
+      try {
+        const avail = await authService.isBiometricsAvailable();
+        if (!avail?.available || !avail?.enrolled) {
+          showToast({
+            type: 'danger',
+            icon: 'finger-print',
+            title: 'Biometrics unavailable',
+            desc: 'Set up Face ID, Touch ID, or a screen lock in your device settings first.',
+          });
+          return;
+        }
+        const res = await authService.authenticateWithBiometrics({
+          promptMessage: 'Confirm to enable biometric sign-in',
+        });
+        if (!res.success) {
+          showToast({
+            type: 'warning',
+            icon: 'finger-print',
+            title: 'Biometric check failed',
+            desc: 'Try again — make sure Face ID, Touch ID, or your device passcode works.',
+          });
+          return;
+        }
+      } catch (err) {
+        showToast({ type: 'danger', icon: 'alert-circle', title: (err as Error).message });
+        return;
+      }
+    }
     await updateProfile({ biometricsEnabled: enabled });
+    showToast({
+      type: 'success',
+      icon: enabled ? 'lock-closed' : 'lock-open',
+      title: enabled ? 'Biometric sign-in enabled' : 'Biometric sign-in disabled',
+      desc: enabled
+        ? 'You will be asked to authenticate every time you open FinTrack Pro.'
+        : 'The lock screen will no longer appear on launch.',
+    });
   };
 
   const testNotification = async () => {

@@ -95,9 +95,17 @@ export function AuthScreen({ onAuthenticated }: Props) {
 
   const tryBiometrics = async () => {
     try {
-      const ok = await authService.authenticateWithBiometrics();
-      if (!ok) {
-        Alert.alert('Biometric sign-in failed', 'Authentication was unsuccessful.');
+      const res = await authService.authenticateWithBiometrics({
+        promptMessage: 'Unlock FinTrack Pro',
+      });
+      if (!res.success) {
+        const friendly =
+          res.error === 'user_cancel'
+            ? 'Authentication was cancelled.'
+            : res.error === 'no_hardware' || res.error === 'not_enrolled'
+            ? 'Biometrics are not set up on this device. Use your password to sign in.'
+            : 'Authentication was unsuccessful.';
+        Alert.alert('Biometric sign-in failed', friendly);
         return;
       }
       const current = await authService.getCurrentUser();

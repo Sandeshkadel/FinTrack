@@ -61,15 +61,27 @@ export function InsightsScreen({ onBack }: Props) {
 
     // saving streak (days with income > expense)
     const days = new Set<string>();
-    [...incomes, ...expenses].forEach((r) => days.add(r.date.slice(0, 10)));
+    [...incomes, ...expenses].forEach((r) => {
+      if (!r?.date || typeof r.date !== 'string') return;
+      const k = r.date.slice(0, 10);
+      if (k) days.add(k);
+    });
     const sortedDays = Array.from(days).sort();
     let streak = 0;
-    for (let i = sortedDays.length - 1; i >= 0; i--) {
-      const d = sortedDays[i];
-      const dayInc = incomes.filter((i) => i.date.slice(0, 10) === d).reduce((s, x) => s + x.amount, 0);
-      const dayExp = expenses.filter((e) => e.date.slice(0, 10) === d).reduce((s, x) => s + x.amount, 0);
-      if (dayInc > dayExp) streak++;
-      else break;
+    try {
+      for (let i = sortedDays.length - 1; i >= 0; i--) {
+        const d = sortedDays[i];
+        const dayInc = incomes
+          .filter((i) => i?.date && typeof i.date === 'string' && i.date.slice(0, 10) === d)
+          .reduce((s, x) => s + (x.amount || 0), 0);
+        const dayExp = expenses
+          .filter((e) => e?.date && typeof e.date === 'string' && e.date.slice(0, 10) === d)
+          .reduce((s, x) => s + (x.amount || 0), 0);
+        if (dayInc > dayExp) streak++;
+        else break;
+      }
+    } catch {
+      streak = 0;
     }
 
     return {

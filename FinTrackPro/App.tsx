@@ -13,11 +13,13 @@ import { AppProvider, useApp } from '@/context/AppContext';
 import { SplashScreen as Splash } from '@/screens/SplashScreen';
 import { OnboardingScreen } from '@/screens/OnboardingScreen';
 import { AuthScreen } from '@/screens/AuthScreen';
+import { BiometricLockScreen } from '@/screens/BiometricLockScreen';
 
 import { RootNavigator } from '@/navigation/RootNavigator';
 import { ToastContainer } from '@/components/ToastContainer';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { COLORS } from '@/constants/colors';
+import { authService } from '@/services/authService';
 
 // Prevent native splash from auto-hiding so we control the transition.
 // Wrap in try/catch so a failure here never blocks the rest of the app.
@@ -47,7 +49,7 @@ export default function App() {
 function AppGate() {
   const theme = useAppTheme();
   const { user, onboardingDone } = useApp();
-  const [phase, setPhase] = useState<'splash' | 'onboarding' | 'auth' | 'main'>('splash');
+  const [phase, setPhase] = useState<'splash' | 'onboarding' | 'auth' | 'locked' | 'main'>('splash');
 
   // Hide native splash after a tick and pick the right phase
   useEffect(() => {
@@ -56,33 +58,65 @@ function AppGate() {
       try { await SplashScreen.hideAsync(); } catch {}
       if (!mounted) return;
       // Decide based on persisted state
-      if (!onboardingDone) setPhase('onboarding');
-      else if (!user) setPhase('auth');
-      else setPhase('main');
+      if (!onboardingDone) {
+        setPhase('onboarding');
+      } else if (!user) {
+        setPhase('auth');
+      } else {
+        // User is signed in. If they opted into biometric lock, force the
+        // unlock screen before showing the main app.
+        const wantsLock = await authService.getBiometricsEnabled();
+        setPhase(wantsLock ? 'locked' : 'main');
+      }
     }, 50);
     return () => { mounted = false; };
   }, []); // run once
 
   // When user signs in via AuthScreen, AppContext rehydrates -> user becomes non-null
   useEffect(() => {
-    if (phase === 'auth' && user) setPhase('main');
+    if (phase === 'auth' && user) {
+      // Re-check biometric preference when we land on main from auth
+      (async () => {
+        const wantsLock = await authService.getBiometricsEnabled();
+        setPhase(wantsLock ? 'locked' : 'main');
+      })();
+    }
+    // If the user signs out from inside the main app, user becomes null —
+    // bounce them to the auth screen.
+    if (phase === 'main' && !user) {
+      setPhase('auth');
+    }
   }, [user, phase]);
 
-  const handleSplashDone = useCallback(() => {
+  const handleSplashDone = useCallback(async () => {
     if (!onboardingDone) setPhase('onboarding');
     else if (!user) setPhase('auth');
-    else setPhase('main');
+    else {
+      const wantsLock = await authService.getBiometricsEnabled();
+      setPhase(wantsLock ? 'locked' : 'main');
+    }
   }, [onboardingDone, user]);
 
   const handleOnboardingDone = useCallback(() => {
     setPhase('auth');
   }, []);
 
-  const handleAuthenticated = useCallback(() => {
+  const handleAuthenticated = useCallback(async () => {
+    const wantsLock = await authService.getBiometricsEnabled();
+    setPhase(wantsLock ? 'locked' : 'main');
+  }, []);
+
+  const handleUnlocked = useCallback(() => {
     setPhase('main');
   }, []);
 
   const handleSignOut = useCallback(async () => {
+    try { await authService.endSession(); } catch {}
+    setPhase('auth');
+  }, []);
+
+  const handleLockedSignOut = useCallback(async () => {
+    try { await authService.endSession(); } catch {}
     setPhase('auth');
   }, []);
 
@@ -96,6 +130,8 @@ function AppGate() {
           <OnboardingScreen onDone={handleOnboardingDone} />
         ) : phase === 'auth' ? (
           <AuthScreen onAuthenticated={handleAuthenticated} />
+        ) : phase === 'locked' ? (
+          <BiometricLockScreen onUnlocked={handleUnlocked} onSignOut={handleLockedSignOut} />
         ) : (
           <RootNavigator onSignOut={handleSignOut} />
         )}

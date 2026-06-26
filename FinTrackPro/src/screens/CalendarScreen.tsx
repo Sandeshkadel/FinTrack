@@ -52,22 +52,30 @@ export function CalendarScreen({ onBack }: Props) {
   const dayIndex = useMemo(() => {
     const map: Record<string, { income: number; expense: number }> = {};
     incomes.forEach((i) => {
+      if (!i?.date || typeof i.date !== 'string') return;
       const k = i.date.slice(0, 10);
+      if (!k) return;
       if (!map[k]) map[k] = { income: 0, expense: 0 };
-      map[k].income += i.amount;
+      map[k].income += i.amount || 0;
     });
     expenses.forEach((e) => {
+      if (!e?.date || typeof e.date !== 'string') return;
       const k = e.date.slice(0, 10);
+      if (!k) return;
       if (!map[k]) map[k] = { income: 0, expense: 0 };
-      map[k].expense += e.amount;
+      map[k].expense += e.amount || 0;
     });
     return map;
   }, [incomes, expenses]);
 
   const monthSummary = useMemo(() => {
     const ym = cursor.toISOString().slice(0, 7);
-    const inc = incomes.filter((i) => i.date.startsWith(ym)).reduce((s, i) => s + i.amount, 0);
-    const exp = expenses.filter((e) => e.date.startsWith(ym)).reduce((s, e) => s + e.amount, 0);
+    const inc = incomes
+      .filter((i) => i?.date && typeof i.date === 'string' && i.date.startsWith(ym))
+      .reduce((s, i) => s + (i.amount || 0), 0);
+    const exp = expenses
+      .filter((e) => e?.date && typeof e.date === 'string' && e.date.startsWith(ym))
+      .reduce((s, e) => s + (e.amount || 0), 0);
     return { inc, exp, net: inc - exp };
   }, [cursor, incomes, expenses]);
 
@@ -75,12 +83,14 @@ export function CalendarScreen({ onBack }: Props) {
     if (!selectedDay) return [];
     const items: any[] = [];
     incomes
-      .filter((i) => i.date.slice(0, 10) === selectedDay)
+      .filter((i) => i?.date && typeof i.date === 'string' && i.date.slice(0, 10) === selectedDay)
       .forEach((i) => items.push({ ...i, _type: 'income' }));
     expenses
-      .filter((e) => e.date.slice(0, 10) === selectedDay)
+      .filter((e) => e?.date && typeof e.date === 'string' && e.date.slice(0, 10) === selectedDay)
       .forEach((e) => items.push({ ...e, _type: 'expense' }));
-    return items.sort((a, b) => a.title.localeCompare(b.title));
+    // Sort by display title (income uses `source`, expense uses `description`).
+    const titleOf = (it: any) => it.source || it.description || it.title || '';
+    return items.sort((a, b) => titleOf(a).localeCompare(titleOf(b)));
   }, [selectedDay, incomes, expenses]);
 
   const goPrev = () => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1));
@@ -196,13 +206,21 @@ export function CalendarScreen({ onBack }: Props) {
                   ]}
                 />
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.eventTitle, { color: theme.text }]}>{ev.title}</Text>
+                  <Text style={[styles.eventTitle, { color: theme.text }]}>
+                    {ev.source || ev.description || ev.title || 'Untitled'}
+                  </Text>
                   <View style={styles.eventMeta}>
-                    <Badge
-                      label={ev.category}
-                      color={ev._type === 'income' ? COLORS.success : COLORS.danger}
-                    />
-                    <Text style={[styles.eventDate, { color: theme.textMuted }]}>{ev.notes}</Text>
+                    {ev.category ? (
+                      <Badge
+                        label={ev.category}
+                        color={ev._type === 'income' ? COLORS.success : COLORS.danger}
+                      />
+                    ) : null}
+                    {ev.notes ? (
+                      <Text style={[styles.eventDate, { color: theme.textMuted }]} numberOfLines={1}>
+                        {ev.notes}
+                      </Text>
+                    ) : null}
                   </View>
                 </View>
                 <Text
