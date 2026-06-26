@@ -66,12 +66,6 @@
       ],
       "expo-local-authentication",
       [
-        "expo-sqlite",
-        {
-          "enablePromiseBasedAPI": true
-        }
-      ],
-      [
         "expo-build-properties",
         {
           "android": {
@@ -86,7 +80,6 @@
         }
       ],
       "expo-secure-store",
-      "expo-font",
       "expo-splash-screen"
     ],
     "experiments": {
