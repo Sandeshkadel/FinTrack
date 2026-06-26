@@ -1,6 +1,6 @@
 {
   "name": "fintrack-pro",
-  "version": "1.0.0",
+  "version": "2.0.4",
   "main": "App.tsx",
   "scripts": {
     "start": "expo start",

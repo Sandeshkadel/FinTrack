@@ -199,73 +199,120 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (hydrationRan.current) return;
     hydrationRan.current = true;
     (async () => {
-      const [
-        user,
-        token,
-        users,
-        incomes,
-        expenses,
-        goals,
-        budgets,
-        transactions,
-        achievements,
-        notifications,
-        healthScore,
-        savingsStreak,
-        theme,
-        currency,
-        onboardingDone,
-        biometricsEnabled,
-      ] = await Promise.all([
-        storage.getUser(),
-        storage.getToken(),
-        storage.getUsers(),
-        storage.getIncomes(),
-        storage.getExpenses(),
-        storage.getGoals(),
-        storage.getBudgets(),
-        storage.getTransactions(),
-        storage.getAchievements(),
-        storage.getNotifications(),
-        storage.getHealth(),
-        storage.getStreak(),
-        storage.getTheme(),
-        storage.getCurrency(),
-        storage.getOnboardingDone(),
-        storage.getBiometricsEnabled(),
-      ]);
-
-      // Hydrate images for records on app start
-      const allRecordIds = [
-        ...incomes.map((i) => i.id),
-        ...expenses.map((e) => e.id),
-        ...goals.map((g) => g.id),
-      ];
-      const images = allRecordIds.length > 0 ? await imageDB.getAllForRecords(allRecordIds) : {};
-      const withImgs = <T extends { id: string; images?: string[] }>(arr: T[]): T[] =>
-        arr.map((it) => ({ ...it, images: images[it.id] ?? it.images ?? [] }));
-
-      dispatch({
-        type: 'HYDRATE',
-        payload: {
+      // Hydration is the most crash-prone moment on Android: a single malformed
+      // record in AsyncStorage, a rejected promise from SQLite, or a quota-exceeded
+      // error on the achievements setter would otherwise freeze the splash forever.
+      // Wrap the entire pipeline in try/catch so we always reach HYDRATE.
+      try {
+        const [
           user,
           token,
           users,
-          incomes: withImgs(incomes),
-          expenses: withImgs(expenses),
-          goals: withImgs(goals),
+          incomesRaw,
+          expensesRaw,
+          goalsRaw,
           budgets,
           transactions,
           achievements,
           notifications,
           healthScore,
           savingsStreak,
-          theme: (theme as ThemeMode) || 'light',
-          currency: (currency as CurrencySymbol) || '$',
+          theme,
+          currency,
           onboardingDone,
           biometricsEnabled,
-        },
-      });
+        ] = await Promise.all([
+          storage.getUser(),
+          storage.getToken(),
+          storage.getUsers(),
+          storage.getIncomes(),
+          storage.getExpenses(),
+          storage.getGoals(),
+          storage.getBudgets(),
+          storage.getTransactions(),
+          storage.getAchievements(),
+          storage.getNotifications(),
+          storage.getHealth(),
+          storage.getStreak(),
+          storage.getTheme(),
+          storage.getCurrency(),
+          storage.getOnboardingDone(),
+          storage.getBiometricsEnabled(),
+        ]);
+
+        // Defensive: drop any null / undefined / shape-broken records so a single
+        // bad row can't take down every screen that does .map on the array.
+        const clean = <T extends { id: string }>(arr: any[]): T[] =>
+          Array.isArray(arr)
+            ? arr.filter((r): r is T => !!r && typeof r === 'object' && typeof (r as any).id === 'string')
+            : [];
+        const incomes = clean<typeof incomesRaw[number]>(incomesRaw);
+        const expenses = clean<typeof expensesRaw[number]>(expensesRaw);
+        const goals = clean<typeof goalsRaw[number]>(goalsRaw);
+
+        // Hydrate images for records on app start. Best-effort: if SQLite fails,
+        // log and continue with no images rather than crash hydration.
+        const allRecordIds = [
+          ...incomes.map((i) => i.id),
+          ...expenses.map((e) => e.id),
+          ...goals.map((g) => g.id),
+        ];
+        let images: Record<string, string[]> = {};
+        try {
+          images = allRecordIds.length > 0 ? await imageDB.getAllForRecords(allRecordIds) : {};
+        } catch (imgErr) {
+          console.warn('[hydration] image lookup failed:', imgErr);
+          images = {};
+        }
+        const withImgs = <T extends { id: string; images?: string[] }>(arr: T[]): T[] =>
+          arr.map((it) => ({ ...it, images: images[it.id] ?? it.images ?? [] }));
+
+        dispatch({
+          type: 'HYDRATE',
+          payload: {
+            user,
+            token,
+            users,
+            incomes: withImgs(incomes),
+            expenses: withImgs(expenses),
+            goals: withImgs(goals),
+            budgets,
+            transactions,
+            achievements,
+            notifications,
+            healthScore,
+            savingsStreak,
+            theme: (theme as ThemeMode) || 'light',
+            currency: (currency as CurrencySymbol) || '$',
+            onboardingDone,
+            biometricsEnabled,
+          },
+        });
+      } catch (err) {
+        // Last-resort safety: dispatch safe defaults so the splash always advances.
+        console.warn('[hydration] failed; using safe defaults:', err);
+        dispatch({
+          type: 'HYDRATE',
+          payload: {
+            user: null,
+            token: null,
+            users: [],
+            incomes: [],
+            expenses: [],
+            goals: [],
+            budgets: [],
+            transactions: [],
+            achievements: [],
+            notifications: [],
+            healthScore: 0,
+            savingsStreak: 0,
+            theme: 'light' as ThemeMode,
+            currency: '$' as CurrencySymbol,
+            onboardingDone: false,
+            biometricsEnabled: false,
+          },
+        });
+      }
     })();
   }, []);
 
@@ -348,46 +395,63 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   /* ---------- Health ---------- */
   const refreshHealth = useCallback(async () => {
-    const now = new Date();
-    const cutoff30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    const cutoff60 = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+    // Defensive: a malformed record or a rejected storage write would otherwise
+    // bubble out of the Dashboard's mount effect and trigger a red-box on Android.
+    try {
+      const now = new Date();
+      const cutoff30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const cutoff60 = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
 
-    const recentIncomeCount = state.incomes.filter((i) => new Date(i.date) >= cutoff30).length;
-    const monthIncome = state.incomes
-      .filter((i) => new Date(i.date) >= cutoff30)
-      .reduce((s, i) => s + i.amount, 0);
-    const monthExpense = state.expenses
-      .filter((e) => new Date(e.date) >= cutoff30)
-      .reduce((s, e) => s + e.amount, 0);
-    const prevMonthIncome = state.incomes
-      .filter((i) => {
-        const d = new Date(i.date);
-        return d >= cutoff60 && d < cutoff30;
-      })
-      .reduce((s, i) => s + i.amount, 0);
-    const prevMonthExpense = state.expenses
-      .filter((e) => {
-        const d = new Date(e.date);
-        return d >= cutoff60 && d < cutoff30;
-      })
-      .reduce((s, e) => s + e.amount, 0);
+      // Coerce every numeric access through (x.amount || 0) so a single bad
+      // record cannot NaN-poison the totals and render $NaN everywhere.
+      const recentIncomeCount = state.incomes.filter(
+        (i) => typeof i?.date === 'string' && new Date(i.date) >= cutoff30,
+      ).length;
+      const monthIncome = state.incomes
+        .filter((i) => typeof i?.date === 'string' && new Date(i.date) >= cutoff30)
+        .reduce((s, i) => s + (i.amount || 0), 0);
+      const monthExpense = state.expenses
+        .filter((e) => typeof e?.date === 'string' && new Date(e.date) >= cutoff30)
+        .reduce((s, e) => s + (e.amount || 0), 0);
+      const prevMonthIncome = state.incomes
+        .filter((i) => {
+          if (typeof i?.date !== 'string') return false;
+          const d = new Date(i.date);
+          return d >= cutoff60 && d < cutoff30;
+        })
+        .reduce((s, i) => s + (i.amount || 0), 0);
+      const prevMonthExpense = state.expenses
+        .filter((e) => {
+          if (typeof e?.date !== 'string') return false;
+          const d = new Date(e.date);
+          return d >= cutoff60 && d < cutoff30;
+        })
+        .reduce((s, e) => s + (e.amount || 0), 0);
 
-    const report = calculateHealth({
-      totalIncome: monthIncome,
-      totalExpense: monthExpense,
-      recentIncomeCount,
-      budgets: state.budgets,
-      expenses: state.expenses,
-      goals: state.goals,
-      prevMonthIncome,
-      prevMonthExpense,
-      streak: state.savingsStreak,
-      achievementsUnlocked: state.achievements.filter((a) => a.unlocked).length,
-    });
-    await storage.setHealth(report.score);
-    dispatch({ type: 'SET_HEALTH', payload: report.score });
-    dispatch({ type: 'SET_HEALTH_REPORT', payload: report });
-    return report.score;
+      const report = calculateHealth({
+        totalIncome: monthIncome,
+        totalExpense: monthExpense,
+        recentIncomeCount,
+        budgets: state.budgets,
+        expenses: state.expenses,
+        goals: state.goals,
+        prevMonthIncome,
+        prevMonthExpense,
+        streak: state.savingsStreak,
+        achievementsUnlocked: state.achievements.filter((a) => a?.unlocked).length,
+      });
+      try {
+        await storage.setHealth(report.score);
+      } catch (writeErr) {
+        console.warn('[refreshHealth] storage.setHealth failed:', writeErr);
+      }
+      dispatch({ type: 'SET_HEALTH', payload: report.score });
+      dispatch({ type: 'SET_HEALTH_REPORT', payload: report });
+      return report.score;
+    } catch (err) {
+      console.warn('[refreshHealth] failed; reporting 0:', err);
+      return 0;
+    }
   }, [state.incomes, state.expenses, state.budgets, state.goals, state.savingsStreak, state.achievements]);
 
   /* ---------- CRUD helpers ---------- */

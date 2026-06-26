@@ -115,15 +115,17 @@ export function ProfileScreen({ onBack }: Props) {
                   <Image source={{ uri: user.avatar }} style={styles.avatarImg} />
                 ) : (
                   <View style={[styles.avatar, { backgroundColor: COLORS.primary }]}>
-                    <Text style={styles.avatarText}>{user.name.charAt(0).toUpperCase()}</Text>
+                    <Text style={styles.avatarText}>
+                      {(user.name || user.email || '?').charAt(0).toUpperCase()}
+                    </Text>
                   </View>
                 )}
                 <View style={[styles.cameraBubble, { backgroundColor: COLORS.primary, borderColor: theme.bg }]}>
                   <Ionicons name="camera" size={14} color="#fff" />
                 </View>
               </Pressable>
-              <Text style={[styles.userName, { color: theme.text }]}>{user.name}</Text>
-              <Text style={[styles.userEmail, { color: theme.textMuted }]}>{user.email}</Text>
+              <Text style={[styles.userName, { color: theme.text }]}>{user.name || 'FinTrack user'}</Text>
+              <Text style={[styles.userEmail, { color: theme.textMuted }]}>{user.email || ''}</Text>
               {user.createdAt ? (
                 <Text style={[styles.userSince, { color: theme.textMuted }]}>
                   Member since {new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
@@ -135,9 +137,9 @@ export function ProfileScreen({ onBack }: Props) {
           {/* ACCOUNT INFO */}
           <Section title="Account">
             <Card style={{ gap: 4 }}>
-              <InfoRow label="Name" value={user.name} icon="person" action={() => setEditSheetOpen(true)} />
-              <InfoRow label="Email" value={user.email} icon="mail" />
-              <InfoRow label="Currency" value={`${user.symbol} ${user.currency}`} icon="cash" />
+              <InfoRow label="Name" value={user.name || ''} icon="person" action={() => setEditSheetOpen(true)} />
+              <InfoRow label="Email" value={user.email || ''} icon="mail" />
+              <InfoRow label="Currency" value={`${user.symbol || ''} ${user.currency || ''}`.trim()} icon="cash" />
               <InfoRow label="Theme" value={user.theme || 'System'} icon="color-palette" />
             </Card>
           </Section>

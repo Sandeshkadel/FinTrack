@@ -2,7 +2,7 @@
   "expo": {
     "name": "FinTrack Pro",
     "slug": "fintrack-pro",
-    "version": "1.0.0",
+    "version": "2.0.4",
     "orientation": "portrait",
     "icon": "./src/assets/icon.png",
     "scheme": "fintrack",
@@ -16,7 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.sandeshkadel.fintrackpro",
-      "buildNumber": "1.0.0",
+      "buildNumber": "2.0.4",
       "icon": "./src/assets/icon.png",
       "infoPlist": {
         "NSCameraUsageDescription": "FinTrack Pro uses the camera to scan receipts and capture profile photos.",
@@ -31,7 +31,7 @@
     },
     "android": {
       "package": "com.sandeshkadel.fintrackpro",
-      "versionCode": 1,
+      "versionCode": 4,
       "adaptiveIcon": {
         "foregroundImage": "./src/assets/adaptive-icon.png",
         "backgroundColor": "#8b5cf6"

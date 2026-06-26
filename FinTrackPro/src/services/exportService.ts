@@ -7,13 +7,29 @@ export const exportService = {
     const rows: string[][] = [
       ['Date', 'Type', 'Category', 'Amount', 'Description'],
     ];
-    incomes.forEach((i) =>
-      rows.push([i.date, 'Income', i.category || '', String(i.amount), i.source || '']),
-    );
-    expenses.forEach((e) =>
-      rows.push([e.date, 'Expense', e.category || '', String(e.amount), e.description || '']),
-    );
-    rows.sort((a, b) => a[0].localeCompare(b[0]));
+    incomes.forEach((i) => {
+      if (!i) return;
+      rows.push([
+        i.date || '',
+        'Income',
+        i.category || '',
+        String(i.amount ?? 0),
+        i.source || '',
+      ]);
+    });
+    expenses.forEach((e) => {
+      if (!e) return;
+      rows.push([
+        e.date || '',
+        'Expense',
+        e.category || '',
+        String(e.amount ?? 0),
+        e.description || '',
+      ]);
+    });
+    // Guard against undefined first-column values from legacy/migrated records —
+    // String(a) avoids the "Cannot read property 'localeCompare' of undefined" throw.
+    rows.sort((a, b) => String(a[0] ?? '').localeCompare(String(b[0] ?? '')));
 
     const escape = (s: string) => {
       if (s == null) return '';

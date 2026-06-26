@@ -271,7 +271,7 @@ export function SettingsScreen({ onBack, onNavigate, onSignOut }: Props) {
         {/* ABOUT */}
         <Section title="About">
           <Card style={{ gap: 12 }}>
-            <Row label="Version" value="2.0.0" />
+            <Row label="Version" value="2.0.4" />
             <Row label="Build" value="Expo SDK 51" />
             <Row label="Storage" value="100% on-device" />
             <Row label="Made with" value="💜 for your finances" />

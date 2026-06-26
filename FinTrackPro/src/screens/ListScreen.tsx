@@ -32,7 +32,11 @@ import { formatCurrency, formatDate } from '@/utils/finance';
 import type { Expense, Income, Goal, Budget } from '@/types';
 
 function colorFor(key: string): string {
-  const sum = key.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+  // Guard: a record with no category (legacy/migrated data) would otherwise throw
+  // "Cannot read property 'split' of undefined" when rendered.
+  const safe = typeof key === 'string' ? key : '';
+  if (!safe) return CATEGORY_COLORS[0];
+  const sum = safe.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
   return CATEGORY_COLORS[Math.abs(sum) % CATEGORY_COLORS.length];
 }
 
@@ -124,7 +128,14 @@ export function ListScreen({ kind, onBack }: Props) {
     else list = budgets;
     if (search.trim()) {
       const q = search.toLowerCase();
-      list = list.filter((it) => (it.title || it.name || '').toLowerCase().includes(q));
+      list = list.filter((it) => {
+        // Each record shape may store its name differently: income uses `source`,
+        // expense uses `description`, goal/budget use `title` or `name`. Walk all.
+        const text = (
+          it.source || it.description || it.title || it.name || ''
+        ).toLowerCase();
+        return text.includes(q);
+      });
     }
     return list;
   }, [kind, incomes, expenses, goals, budgets, search]);
@@ -316,8 +327,14 @@ function ListItem({
   const theme = useAppTheme();
 
   if (kind === 'income' || kind === 'expense') {
-    const catColor = colorFor(item.category);
+    const catColor = colorFor(item.category || 'other');
     const sign = kind === 'income' ? '+' : '-';
+    // Income records save with `source`; Expense records save with `description`.
+    // Older or migrated records may use `title` — fall back through all three.
+    const titleText =
+      kind === 'income'
+        ? item.source || item.title || item.name || 'Untitled'
+        : item.description || item.title || item.name || 'Untitled';
     return (
       <Pressable onPress={onEdit}>
         <Card style={styles.row}>
@@ -330,10 +347,10 @@ function ListItem({
           </View>
           <View style={{ flex: 1 }}>
             <Text style={[styles.rowTitle, { color: theme.text }]} numberOfLines={1}>
-              {item.title}
+              {titleText}
             </Text>
             <View style={styles.rowMeta}>
-              <Badge label={item.category} color={catColor} />
+              {item.category ? <Badge label={item.category} color={catColor} /> : null}
               <Text style={[styles.rowDate, { color: theme.textMuted }]}>{formatDate(item.date)}</Text>
             </View>
           </View>
@@ -344,7 +361,7 @@ function ListItem({
             ]}
           >
             {sign}
-            {formatCurrency(item.amount, currency, sym)}
+            {formatCurrency(item.amount || 0, currency, sym)}
           </Text>
         </Card>
       </Pressable>
@@ -352,7 +369,9 @@ function ListItem({
   }
 
   if (kind === 'goal') {
-    const pct = item.target > 0 ? Math.min(100, (item.current / item.target) * 100) : 0;
+    const pct = item.target > 0 ? Math.min(100, ((item.current || 0) / item.target) * 100) : 0;
+    // Goals save with `title`; older records may use `name` — fall back through both.
+    const goalTitle = item.title || item.name || 'Untitled goal';
     return (
       <Pressable onPress={onEdit}>
         <Card>
@@ -361,9 +380,9 @@ function ListItem({
               <Text style={{ fontSize: 20 }}>{item.icon || '🎯'}</Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.rowTitle, { color: theme.text }]}>{item.name}</Text>
+              <Text style={[styles.rowTitle, { color: theme.text }]}>{goalTitle}</Text>
               <Text style={[styles.rowDate, { color: theme.textMuted }]}>
-                {formatCurrency(item.current, currency, sym)} of {formatCurrency(item.target, currency, sym)}
+                {formatCurrency(item.current || 0, currency, sym)} of {formatCurrency(item.target || 0, currency, sym)}
               </Text>
             </View>
             <Text style={[styles.amount, { color: item.color || COLORS.primary }]}>
@@ -371,7 +390,7 @@ function ListItem({
             </Text>
           </View>
           <View style={{ marginTop: 10 }}>
-            <ProgressBar value={item.current} max={item.target} height={8} color={item.color || COLORS.primary} />
+            <ProgressBar value={item.current || 0} max={item.target || 0} height={8} color={item.color || COLORS.primary} />
           </View>
         </Card>
       </Pressable>
@@ -381,8 +400,11 @@ function ListItem({
   // budget
   const used = expenses
     .filter((e) => e.category === item.category)
-    .reduce((s, e) => s + e.amount, 0);
-  const pct = item.limit > 0 ? Math.min(100, (used / item.limit) * 100) : 0;
+    .reduce((s, e) => s + (e.amount || 0), 0);
+  const limit = item.limit || 0;
+  const pct = limit > 0 ? Math.min(100, (used / limit) * 100) : 0;
+  // Budgets may be saved with `name` or `title` — fall back through both.
+  const budgetTitle = item.name || item.title || item.category || 'Budget';
   return (
     <Pressable onPress={onEdit}>
       <Card>
@@ -391,9 +413,9 @@ function ListItem({
             <Ionicons name="pie-chart" size={18} color={COLORS.primary} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.rowTitle, { color: theme.text }]}>{item.name}</Text>
+            <Text style={[styles.rowTitle, { color: theme.text }]}>{budgetTitle}</Text>
             <Text style={[styles.rowDate, { color: theme.textMuted }]}>
-              {formatCurrency(used, currency, sym)} of {formatCurrency(item.limit, currency, sym)}
+              {formatCurrency(used, currency, sym)} of {formatCurrency(limit, currency, sym)}
             </Text>
           </View>
           <Text
@@ -408,7 +430,7 @@ function ListItem({
         <View style={{ marginTop: 10 }}>
           <ProgressBar
             value={used}
-            max={item.limit}
+            max={limit}
             height={8}
             color={pct >= 100 ? COLORS.danger : pct >= 80 ? '#f59e0b' : COLORS.primary}
           />

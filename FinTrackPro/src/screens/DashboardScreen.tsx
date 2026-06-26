@@ -51,13 +51,23 @@ export function DashboardScreen({ onNavigate, onOpenSearch }: Props) {
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    refreshHealth();
+    // Defensive: refreshHealth is now try/catch'd internally, but wrap anyway
+    // so a future regression never produces an unhandled rejection that bubbles
+    // into ErrorBoundary / red-box on Android.
+    refreshHealth().catch((err) => {
+      console.warn('[Dashboard] refreshHealth failed:', err);
+    });
   }, [incomes, expenses, goals, budgets, refreshHealth]);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await refreshHealth();
-    setRefreshing(false);
+    try {
+      await refreshHealth();
+    } catch (err) {
+      console.warn('[Dashboard] onRefresh failed:', err);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const lineData = useMemo(() => getChartData(incomes, expenses, chartRange), [incomes, expenses, chartRange]);
@@ -65,25 +75,32 @@ export function DashboardScreen({ onNavigate, onOpenSearch }: Props) {
   const budgetUsageRaw = useMemo(() => getBudgetUsageData(budgets, expenses), [budgets, expenses]);
   const budgetUsage = useMemo(
     () =>
-      budgetUsageRaw.labels.map((label, i) => ({
-        label: label.charAt(0).toUpperCase() + label.slice(1),
-        value: budgetUsageRaw.limits[i] - budgetUsageRaw.used[i],
-        color: budgetUsageRaw.used[i] > budgetUsageRaw.limits[i] ? COLORS.danger : COLORS.primary,
-      })),
+      budgetUsageRaw.labels.map((label, i) => {
+        const safeLabel = (label || '').toString();
+        const limit = budgetUsageRaw.limits[i] || 0;
+        const used = budgetUsageRaw.used[i] || 0;
+        return {
+          label: safeLabel.charAt(0).toUpperCase() + safeLabel.slice(1),
+          value: limit - used,
+          color: used > limit ? COLORS.danger : COLORS.primary,
+        };
+      }),
     [budgetUsageRaw],
   );
   const upcomingRaw = useMemo(() => getUpcomingBills(expenses, 7), [expenses]);
   const upcoming = useMemo(
     () =>
-      upcomingRaw.map((e) => ({
-        id: e.id,
-        title: e.description || 'Untitled',
-        amount: e.amount,
-        dueLabel: new Date(e.date).toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-        }),
-      })),
+      upcomingRaw
+        .filter((e) => !!e && typeof e.id !== 'undefined')
+        .map((e) => ({
+          id: e.id,
+          title: e.description || 'Untitled',
+          amount: e.amount || 0,
+          dueLabel:
+            typeof e.date === 'string'
+              ? new Date(e.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+              : 'No date',
+        })),
     [upcomingRaw],
   );
   const activityRaw = useMemo(
@@ -92,16 +109,21 @@ export function DashboardScreen({ onNavigate, onOpenSearch }: Props) {
   );
   const activity = useMemo(
     () =>
-      activityRaw.map((a) => ({
-        id: a.id,
-        title: a.type === 'income' ? a.source : (a as any).description || 'Untitled',
-        amount: a.amount,
-        type: a.type,
-        dateLabel: new Date(a.date).toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-        }),
-      })),
+      activityRaw
+        .filter((a) => !!a && typeof a.id !== 'undefined')
+        .map((a) => ({
+          id: a.id,
+          title:
+            a.type === 'income'
+              ? (a.source || a.title || a.name || 'Untitled')
+              : ((a as any).description || a.title || a.name || 'Untitled'),
+          amount: a.amount || 0,
+          type: a.type,
+          dateLabel:
+            typeof a.date === 'string'
+              ? new Date(a.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+              : 'No date',
+        })),
     [activityRaw],
   );
 

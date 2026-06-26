@@ -8,13 +8,18 @@ import * as SQLite from 'expo-sqlite';
  *  - SQLite for image blobs so the 6MB AsyncStorage limit never becomes a problem
  */
 
-let dbPromise: Promise<SQLite.SQLiteDatabase>;
+let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
 
 export function getDB(): Promise<SQLite.SQLiteDatabase> {
   if (!dbPromise) {
     dbPromise = SQLite.openDatabaseAsync('fintrack.db').then(async (db) => {
       await init(db);
       return db;
+    }).catch((err) => {
+      // If init or open fails, clear the cached promise so the next call retries
+      // instead of poisoning the whole app with a forever-rejected promise.
+      dbPromise = null;
+      throw err;
     });
   }
   return dbPromise;
@@ -71,17 +76,25 @@ export const imageDB = {
 
   async getAllForRecords(recordIds: string[]): Promise<Record<string, string[]>> {
     if (recordIds.length === 0) return {};
+    // Android's SQLiteStatement has a per-call parameter limit (999 on older
+    // devices, 32766 on newer). Chunk to 500 so power users with hundreds of
+    // records never trip the limit and crash hydration.
+    const CHUNK = 500;
     const db = await getDB();
-    const placeholders = recordIds.map(() => '?').join(',');
-    const rows = await db.getAllAsync<{ record_id: string; data_uri: string; sort_order: number }>(
-      `SELECT record_id, data_uri, sort_order FROM images WHERE record_id IN (${placeholders}) ORDER BY sort_order ASC`,
-      ...recordIds,
-    );
     const out: Record<string, string[]> = {};
-    rows.forEach((r) => {
-      if (!out[r.record_id]) out[r.record_id] = [];
-      out[r.record_id].push(r.data_uri);
-    });
+    for (let i = 0; i < recordIds.length; i += CHUNK) {
+      const slice = recordIds.slice(i, i + CHUNK);
+      const placeholders = slice.map(() => '?').join(',');
+      const rows = await db.getAllAsync<{ record_id: string; data_uri: string; sort_order: number }>(
+        `SELECT record_id, data_uri, sort_order FROM images WHERE record_id IN (${placeholders}) ORDER BY sort_order ASC`,
+        ...slice,
+      );
+      rows.forEach((r) => {
+        if (!r || typeof r.record_id !== 'string') return;
+        if (!out[r.record_id]) out[r.record_id] = [];
+        out[r.record_id].push(r.data_uri);
+      });
+    }
     return out;
   },
 
