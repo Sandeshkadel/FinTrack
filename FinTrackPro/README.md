@@ -18,17 +18,36 @@ Take control of your money with stunning charts, smart insights, OCR receipt sca
 |----------|---------|------|----------|
 | 🤖 **Android (APK)** | 2.0.0 | ~65 MB | [**Download Android APK**](https://github.com/Sandeshkadel/FinTrack/releases/latest/download/fintrack-pro.apk) |
 | 🤖 **Android (AAB)** | 2.0.0 | ~50 MB | [Download Android AAB](https://github.com/Sandeshkadel/FinTrack/releases/latest/download/fintrack-pro.aab) |
-| 🍎 **iOS (IPA)** | 2.0.0 | ~70 MB | [**Download iOS IPA**](https://github.com/Sandeshkadel/FinTrack/releases/latest/download/fintrack-pro.ipa) |
+| 🍎 **iOS (IPA)** | 2.0.0 | ~70 MB | [**Build IPA locally →**](https://github.com/Sandeshkadel/FinTrack#-building-from-source) |
 
 > **Platform requirements:** Android 7.0+ (API 24) · iOS 15.1+
 >
-> **iOS note:** The IPA is sideloaded (not App Store distributed). See the [iOS Install Guide](#-ios-install-guide-altstore--sideloadly) below — works with a free Apple ID, but apps must be refreshed every 7 days.
+> **Build status:** The Android APK and AAB are produced automatically by GitHub Actions on every `v*` tag and attached to the [Releases page](https://github.com/Sandeshkadel/FinTrack/releases). The iOS IPA is **not** pre-built (Apple requires macOS + Xcode) — see the [iOS Install Guide](#-ios-install-guide-altstore--sideloadly) below. You can build the IPA yourself from source on macOS in ~10 minutes, then sideload it via AltStore or Sideloadly with a free Apple ID.
 
 ---
 
 ## 🍎 iOS Install Guide (AltStore & Sideloadly)
 
 > **Heads-up:** Apple does not allow permanent free installation of iOS apps outside the App Store. The methods below use your free Apple ID to sign the IPA locally — they work, but with limitations.
+>
+> **No prebuilt IPA in releases:** Because Apple requires macOS + Xcode to build iOS apps, this repo does **not** ship a pre-built `.ipa` in the GitHub Release. You will build it yourself on a Mac in ~10 minutes (commands below) OR use the web app / Android version. The Android APK is prebuilt and attached to every release.
+
+### Build the IPA yourself (macOS only, ~10 minutes)
+
+```bash
+git clone https://github.com/Sandeshkadel/FinTrack.git
+cd FinTrack/FinTrackPro
+npm install --legacy-peer-deps
+npx expo prebuild --platform ios --clean
+cd ios && pod install && cd ..
+eas build -p ios --profile preview --local --output ./build/fintrack-pro.ipa
+# OR if you don't have an Expo account, use xcodebuild directly:
+# cd ios && xcodebuild -workspace FinTrackPro.xcworkspace -scheme FinTrackPro \
+#   -configuration Release -destination 'generic/platform=iOS' \
+#   -archivePath build/FinTrackPro.xcarchive CODE_SIGNING_ALLOWED=NO archive
+```
+
+The output is `FinTrackPro/build/fintrack-pro.ipa`. Use it with the AltStore or Sideloadly methods below.
 
 ### Limitations of free Apple ID sideloading
 
